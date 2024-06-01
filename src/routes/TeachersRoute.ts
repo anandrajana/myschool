@@ -36,7 +36,22 @@ const getCommonStudents = async (req: Request, res: Response) => {
     res.status(StatusCodes.OK).json({ students: commonStudents });
 };
 
+const suspend = async (req: Request, res: Response) => {
+    const { student } = req.body;
+
+    if (!student) {
+        return res
+            .status(StatusCodes.BAD_REQUEST)
+            .json({ error: 'Student email is required' });
+    }
+
+    await TeacherStudentService.suspend(student);
+
+    res.status(StatusCodes.NO_CONTENT).send();
+};
+
 export default {
     register,
     getCommonStudents,
+    suspend,
 };

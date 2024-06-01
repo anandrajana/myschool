@@ -69,7 +69,23 @@ const getCommonStudents = async (teacherEmails: string[]) => {
     return result.rows.map((row) => row.email);
 };
 
+const suspend = async (student: string) => {
+    const suspendStatement = sql`
+        UPDATE student
+        SET is_suspended = TRUE
+        WHERE email = ${student}
+        RETURNING id
+    `;
+
+    const result = await Postgres.query(suspendStatement);
+
+    if (result.rowCount === 0) {
+        return new Error('Student not found');
+    }
+};
+
 export default {
     createTeacher,
     getCommonStudents,
+    suspend,
 };

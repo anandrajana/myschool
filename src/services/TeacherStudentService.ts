@@ -16,7 +16,16 @@ const getCommonStudents = async (teacherEmails: string[]) => {
     }
 };
 
+const suspend = async (student: string) => {
+    try {
+        await TeacherStudentModel.suspend(student);
+    } catch (error) {
+        throw error;
+    }
+};
+
 export default {
     createTeacher,
     getCommonStudents,
+    suspend,
 };
