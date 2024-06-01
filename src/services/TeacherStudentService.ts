@@ -8,6 +8,15 @@ const createTeacher = async (teacher: string, students: string[]) => {
     }
 };
 
+const getCommonStudents = async (teacherEmails: string[]) => {
+    try {
+        return await TeacherStudentModel.getCommonStudents(teacherEmails);
+    } catch (error) {
+        throw error;
+    }
+};
+
 export default {
     createTeacher,
+    getCommonStudents,
 };

@@ -54,6 +54,22 @@ const createTeacher = async (teacher: string, students: string[]) => {
     return true;
 };
 
+const getCommonStudents = async (teacherEmails: string[]) => {
+    const commonStudentsStatement = sql`
+        SELECT s.email 
+        FROM student s
+        JOIN teacher_of_student ts ON s.id = ts.student_id
+        JOIN teacher t ON t.id = ts.teacher_id
+        WHERE t.email = ANY(${teacherEmails})
+        GROUP BY s.email
+        HAVING COUNT(DISTINCT t.id) = ${teacherEmails.length};
+  `;
+    const result = await Postgres.query(commonStudentsStatement);
+
+    return result.rows.map((row) => row.email);
+};
+
 export default {
     createTeacher,
+    getCommonStudents,
 };
