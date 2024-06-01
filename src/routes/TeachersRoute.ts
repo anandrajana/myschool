@@ -50,8 +50,26 @@ const suspend = async (req: Request, res: Response) => {
     res.status(StatusCodes.NO_CONTENT).send();
 };
 
+const getRecipients = async (req: Request, res: Response) => {
+    const { teacher, notification } = req.body;
+
+    if (!teacher || !notification) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+            error: 'Teacher email and notification text are required',
+        });
+    }
+
+    const recipients = await TeacherStudentService.getRecipients(
+        teacher,
+        notification
+    );
+
+    res.status(StatusCodes.OK).json({ recipients });
+};
+
 export default {
     register,
     getCommonStudents,
     suspend,
+    getRecipients,
 };

@@ -1,4 +1,5 @@
 import TeacherStudentModel from '../models/TeacherStudentModel';
+import NotificationUtil from '../utils/NotificationUtil';
 
 const createTeacher = async (teacher: string, students: string[]) => {
     try {
@@ -24,8 +25,25 @@ const suspend = async (student: string) => {
     }
 };
 
+const getRecipients = async (teacher: string, notification: string) => {
+    try {
+        const mentionedStudents =
+            NotificationUtil.extractMentionedEmails(notification);
+
+        const registeredStudents =
+            await TeacherStudentModel.getRegisteredStudents(teacher);
+
+        return Array.from(
+            new Set([...registeredStudents, ...mentionedStudents])
+        );
+    } catch (error) {
+        throw error;
+    }
+};
+
 export default {
     createTeacher,
     getCommonStudents,
     suspend,
+    getRecipients,
 };

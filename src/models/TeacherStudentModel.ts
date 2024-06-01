@@ -84,8 +84,22 @@ const suspend = async (student: string) => {
     }
 };
 
+const getRegisteredStudents = async (teacher: string) => {
+    const registeredStudentsStatement = sql`
+        SELECT student.email
+        FROM student
+        JOIN teacher_of_student ts ON student.id = ts.student_id
+        JOIN teacher t ON ts.teacher_id = t.id
+        WHERE t.email = ${teacher} AND student.is_suspended = FALSE;
+    `;
+    const result = await Postgres.query(registeredStudentsStatement);
+
+    return result.rows.map((row) => row.email);
+};
+
 export default {
     createTeacher,
     getCommonStudents,
     suspend,
+    getRegisteredStudents,
 };
