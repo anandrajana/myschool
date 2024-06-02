@@ -9,6 +9,7 @@ import { StatusCodes } from 'http-status-codes';
 import Logger from '../../libs/Logger';
 import BadRequestError from '../../errors/BadRequestError';
 import ConflictError from '../../errors/ConflictError';
+import NotFoundError from '../../errors/NotFoundError';
 
 describe('TeachersRoute test', () => {
     let server: Server;
@@ -141,6 +142,73 @@ describe('TeachersRoute test', () => {
                 expect(res.body.message).toEqual(error.message);
             }
         );
+    });
+
+    describe('POST /api/suspend', () => {
+        const url = '/api/suspend';
+
+        it('should suspend a student with 204 status', async () => {
+            const student = 'student1@example.com';
+            await addTeacher('teacher@example.com', [student]);
+
+            const res = await request(server).post(url).send({ student });
+
+            expect(res.status).toEqual(StatusCodes.NO_CONTENT);
+        });
+
+        it('should return 404 status if student not found', async () => {
+            const notFoundStudent = 'student2@example.com';
+            const student = 'student1@example.com';
+            await addTeacher('teacher@example.com', [student]);
+
+            const res = await request(server)
+                .post(url)
+                .send({ student: notFoundStudent });
+            const error = new NotFoundError('student not found');
+
+            expect(Logger.error).toHaveBeenCalledWith(error);
+            expect(res.status).toEqual(StatusCodes.NOT_FOUND);
+            expect(res.body.message).toEqual(error.message);
+        });
+
+        test.each`
+            student          | errorMessage
+            ${'student.com'} | ${'"body.student" must be a valid email'}
+            ${''}            | ${'"body.student" is not allowed to be empty'}
+        `(
+            'should return 400 Bad Request',
+            async ({ student, errorMessage }) => {
+                const res = await request(server).post(url).send({ student });
+                const error = new BadRequestError(errorMessage);
+
+                expect(Logger.error).toHaveBeenCalledWith(error);
+                expect(res.status).toEqual(StatusCodes.BAD_REQUEST);
+                expect(res.body.message).toEqual(error.message);
+            }
+        );
+    });
+
+    describe('POST /api/retrievefornotifications', () => {
+        const url = '/api/retrievefornotifications';
+
+        it('should retrieve recipients with 200 status', async () => {
+            const students = [
+                'student1@example.com',
+                'student2@example.com',
+                'student3@example.com',
+            ];
+            const reqBody = {
+                teacher: 'teacher@example.com',
+                notification: `Hello students! @${students[1]} @${students[2]}`,
+            };
+
+            await addTeacher(reqBody.teacher, [students[0]]);
+
+            const res = await request(server).post(url).send(reqBody);
+
+            expect(res.status).toEqual(StatusCodes.OK);
+            expect(res.body).toEqual({ recipients: students });
+        });
     });
 
     const addTeacher = async (teacher: string, students: string[]) => {

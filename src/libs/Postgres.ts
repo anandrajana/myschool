@@ -5,19 +5,7 @@ import { SQLStatement } from 'sql-template-strings';
 
 let pool: Pool | null = null;
 
-async function query(statement: SQLStatement) {
-    const client = await getClient();
-
-    try {
-        return await client.query(statement);
-    } catch (error) {
-        throw new Error('Error while querying the client');
-    } finally {
-        client.release();
-    }
-}
-
-async function migrate() {
+const migrate = async () => {
     const connectionString = process.env.DATABASE_URL;
     const client = new Client({
         connectionString,
@@ -38,15 +26,23 @@ async function migrate() {
     } finally {
         await client.end();
     }
-}
+};
 
-function close() {
+const close = () => {
     if (pool !== null) {
         return pool.end();
     }
-}
+};
 
-async function getClient() {
+const getConnectionPool = (connectionString: string): Pool => {
+    return new Pool({
+        max: 15,
+        connectionString,
+        ssl: { rejectUnauthorized: false },
+    });
+};
+
+const getClient = async () => {
     let client;
 
     if (pool === null) {
@@ -71,15 +67,19 @@ async function getClient() {
     }
 
     return client;
-}
+};
 
-function getConnectionPool(connectionString: string): Pool {
-    return new Pool({
-        max: 10,
-        connectionString,
-        ssl: { rejectUnauthorized: false },
-    });
-}
+const query = async (statement: SQLStatement) => {
+    const client = await getClient();
+
+    try {
+        return await client.query(statement);
+    } catch (error) {
+        throw new Error('Error while querying the client');
+    } finally {
+        client.release();
+    }
+};
 
 export default {
     query,

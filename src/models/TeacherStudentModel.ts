@@ -82,7 +82,7 @@ const suspend = async (student: string) => {
     const result = await Postgres.query(suspendStatement);
 
     if (result.rowCount === 0) {
-        return new NotFoundError('student not found');
+        throw new NotFoundError('student not found');
     }
 };
 
