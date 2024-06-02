@@ -1,70 +1,101 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import TeacherStudentService from '../services/TeacherStudentService';
 import Logger from '../libs/Logger';
+import ValidationUtil from '../utils/ValidationUtil';
+import TeacherStudentSchema from '../validations/TeacherStudentSchema';
 
 const register = async (req: Request, res: Response) => {
-    const { teacher, students } = req.body;
     try {
+        ValidationUtil.doValidate(
+            req,
+            TeacherStudentSchema.createTeacherRequest,
+            'createTeacherRequest'
+        );
+
+        const { teacher, students } = req.body;
+
         await TeacherStudentService.createTeacher(teacher, students);
+
+        return res.status(StatusCodes.NO_CONTENT).send();
     } catch (error) {
+        const err = error as Error;
         Logger.error(error);
         return res.json({
-            message: 'Error occurred while registering teacher and students',
+            message: err.message,
         });
     }
-
-    return res.status(StatusCodes.NO_CONTENT).send();
 };
 
 const getCommonStudents = async (req: Request, res: Response) => {
-    const teacherEmails = req.query.teacher as string[];
+    try {
+        ValidationUtil.doValidate(
+            req,
+            TeacherStudentSchema.commonStudentsRequest,
+            'commonStudentsRequest'
+        );
+        const teacherEmails = req.query.teacher as string[];
 
-    if (!teacherEmails) {
-        return res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ error: 'Teacher email(s) required' });
+        const teacherEmailArray = Array.isArray(teacherEmails)
+            ? teacherEmails
+            : [teacherEmails];
+
+        const commonStudents =
+            await TeacherStudentService.getCommonStudents(teacherEmailArray);
+
+        res.status(StatusCodes.OK).json({ students: commonStudents });
+    } catch (error) {
+        const err = error as Error;
+        Logger.error(error);
+        return res.json({
+            message: err.message,
+        });
     }
-
-    const teacherEmailArray = Array.isArray(teacherEmails)
-        ? teacherEmails
-        : [teacherEmails];
-
-    const commonStudents =
-        await TeacherStudentService.getCommonStudents(teacherEmailArray);
-
-    res.status(StatusCodes.OK).json({ students: commonStudents });
 };
 
 const suspend = async (req: Request, res: Response) => {
-    const { student } = req.body;
+    try {
+        ValidationUtil.doValidate(
+            req,
+            TeacherStudentSchema.suspendStudentsRequest,
+            'suspendStudentsRequest'
+        );
+        const { student } = req.body;
 
-    if (!student) {
-        return res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ error: 'Student email is required' });
+        await TeacherStudentService.suspend(student);
+
+        res.status(StatusCodes.NO_CONTENT).send();
+    } catch (error) {
+        const err = error as Error;
+        Logger.error(error);
+        return res.json({
+            message: err.message,
+        });
     }
-
-    await TeacherStudentService.suspend(student);
-
-    res.status(StatusCodes.NO_CONTENT).send();
 };
 
 const getRecipients = async (req: Request, res: Response) => {
-    const { teacher, notification } = req.body;
+    try {
+        ValidationUtil.doValidate(
+            req,
+            TeacherStudentSchema.emailRecipientsRequest,
+            'emailRecipientsRequest'
+        );
+        const { teacher, notification } = req.body;
 
-    if (!teacher || !notification) {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-            error: 'Teacher email and notification text are required',
+        const recipients = await TeacherStudentService.getRecipients(
+            teacher,
+            notification
+        );
+
+        res.status(StatusCodes.OK).json({ recipients });
+    } catch (error) {
+        const err = error as Error;
+        Logger.error(error);
+        return res.json({
+            message: err.message,
         });
     }
-
-    const recipients = await TeacherStudentService.getRecipients(
-        teacher,
-        notification
-    );
-
-    res.status(StatusCodes.OK).json({ recipients });
 };
 
 export default {
