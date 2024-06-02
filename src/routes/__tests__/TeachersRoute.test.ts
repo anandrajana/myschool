@@ -85,6 +85,64 @@ describe('TeachersRoute test', () => {
         });
     });
 
+    describe('GET /api/commonstudents', () => {
+        const url = '/api/commonstudents';
+
+        it('should get common students with 200 status', async () => {
+            const commonStudent = 'student1@example.com';
+            const teacher1 = 'teacherken@example.com';
+            const teacher2 = 'teacherjohn@example.com';
+            await addTeacher(teacher1, [commonStudent, 'student2@example.com']);
+            await addTeacher(teacher2, [commonStudent, 'student3@example.com']);
+
+            const res = await request(server).get(
+                `${url}?teacher=${teacher1}&teacher=${teacher2}`
+            );
+
+            expect(res.status).toEqual(StatusCodes.OK);
+            expect(res.body).toEqual({ students: [commonStudent] });
+        });
+
+        it('should get empty common students with 204 status', async () => {
+            const teacher1 = 'teacherken@example.com';
+            const teacher2 = 'teacherjohn@example.com';
+            await addTeacher(teacher1, [
+                'student1@example.com',
+                'student2@example.com',
+            ]);
+            await addTeacher(teacher2, [
+                'student3@example.com',
+                'student4@example.com',
+            ]);
+
+            const res = await request(server).get(
+                `${url}?teacher=${teacher1}&teacher=${teacher2}`
+            );
+
+            expect(res.status).toEqual(StatusCodes.OK);
+            expect(res.body).toEqual({ students: [] });
+        });
+
+        test.each`
+            teacher1               | teacher2         | errorMessage
+            ${'teacher.com'}       | ${''}            | ${'"query.teacher[0]" must be a valid email'}
+            ${'teacher@gmail.com'} | ${''}            | ${'"query.teacher[1]" is not allowed to be empty'}
+            ${'teacher@gmail.com'} | ${'teacher.com'} | ${'"query.teacher[1]" must be a valid email'}
+        `(
+            'should return 400 Bad Request',
+            async ({ teacher1, teacher2, errorMessage }) => {
+                const res = await request(server).get(
+                    `${url}?teacher=${teacher1}&teacher=${teacher2}`
+                );
+                const error = new BadRequestError(errorMessage);
+
+                expect(Logger.error).toHaveBeenCalledWith(error);
+                expect(res.status).toEqual(StatusCodes.BAD_REQUEST);
+                expect(res.body.message).toEqual(error.message);
+            }
+        );
+    });
+
     const addTeacher = async (teacher: string, students: string[]) => {
         const client = await Postgres.getClient();
         await client.query('BEGIN');
