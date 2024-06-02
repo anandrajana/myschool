@@ -1,6 +1,8 @@
 import sql from 'sql-template-strings';
 import Postgres from '../libs/Postgres';
 import { PoolClient } from 'pg';
+import ConflictError from '../errors/ConflictError';
+import NotFoundError from '../errors/NotFoundError';
 
 const createStudentsOfTeacher = async (
     client: PoolClient,
@@ -37,7 +39,7 @@ const createTeacher = async (teacher: string, students: string[]) => {
             sql`SELECT id FROM teacher WHERE email = ${teacher}`
         );
         if (existingTeacherResult.rowCount > 0) {
-            throw new Error('Teacher already exists');
+            throw new ConflictError('teacher already exists');
         }
 
         const result = await client.query(
@@ -80,7 +82,7 @@ const suspend = async (student: string) => {
     const result = await Postgres.query(suspendStatement);
 
     if (result.rowCount === 0) {
-        return new Error('Student not found');
+        return new NotFoundError('student not found');
     }
 };
 

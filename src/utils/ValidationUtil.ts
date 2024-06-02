@@ -1,6 +1,7 @@
 import { Request } from 'express';
 import Joi from 'joi';
 import Logger from '../libs/Logger';
+import BadRequestError from '../errors/BadRequestError';
 
 const doValidate = (
     req: Request,
@@ -10,7 +11,7 @@ const doValidate = (
     const validationError = schema.validate(req, { stripUnknown: true }).error;
     if (validationError) {
         Logger.error(validationError, `Error validating ${schemaName} payload`);
-        throw new Error(validationError.message);
+        throw new BadRequestError(validationError.message);
     }
 };
 

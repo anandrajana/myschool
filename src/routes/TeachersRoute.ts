@@ -4,6 +4,7 @@ import TeacherStudentService from '../services/TeacherStudentService';
 import Logger from '../libs/Logger';
 import ValidationUtil from '../utils/ValidationUtil';
 import TeacherStudentSchema from '../validations/TeacherStudentSchema';
+import BaseError from '../errors/BaseError';
 
 const register = async (req: Request, res: Response) => {
     try {
@@ -19,9 +20,9 @@ const register = async (req: Request, res: Response) => {
 
         return res.status(StatusCodes.NO_CONTENT).send();
     } catch (error) {
-        const err = error as Error;
+        const err = error as BaseError;
         Logger.error(error);
-        return res.json({
+        return res.status(err.statusCode).json({
             message: err.message,
         });
     }
@@ -45,9 +46,9 @@ const getCommonStudents = async (req: Request, res: Response) => {
 
         res.status(StatusCodes.OK).json({ students: commonStudents });
     } catch (error) {
-        const err = error as Error;
+        const err = error as BaseError;
         Logger.error(error);
-        return res.json({
+        return res.status(err.statusCode).json({
             message: err.message,
         });
     }
@@ -66,9 +67,9 @@ const suspend = async (req: Request, res: Response) => {
 
         res.status(StatusCodes.NO_CONTENT).send();
     } catch (error) {
-        const err = error as Error;
+        const err = error as BaseError;
         Logger.error(error);
-        return res.json({
+        return res.status(err.statusCode).json({
             message: err.message,
         });
     }
@@ -90,9 +91,9 @@ const getRecipients = async (req: Request, res: Response) => {
 
         res.status(StatusCodes.OK).json({ recipients });
     } catch (error) {
-        const err = error as Error;
+        const err = error as BaseError;
         Logger.error(error);
-        return res.json({
+        return res.status(err.statusCode).json({
             message: err.message,
         });
     }
