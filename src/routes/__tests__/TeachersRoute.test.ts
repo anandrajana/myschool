@@ -209,6 +209,40 @@ describe('TeachersRoute test', () => {
             expect(res.status).toEqual(StatusCodes.OK);
             expect(res.body).toEqual({ recipients: students });
         });
+
+        it('should retrieve recipients with 200 status when no one mentioned in notification', async () => {
+            const students = ['student1@example.com'];
+            const reqBody = {
+                teacher: 'teacher@example.com',
+                notification: 'Hey everybody',
+            };
+
+            await addTeacher(reqBody.teacher, students);
+
+            const res = await request(server).post(url).send(reqBody);
+
+            expect(res.status).toEqual(StatusCodes.OK);
+            expect(res.body).toEqual({ recipients: students });
+        });
+
+        test.each`
+            teacher                | notification | errorMessage
+            ${'teacher@gmail.com'} | ${''}        | ${'"body.notification" is not allowed to be empty'}
+            ${''}                  | ${'Hello'}   | ${'"body.teacher" is not allowed to be empty'}
+            ${'teacher.com'}       | ${'Hello'}   | ${'"body.teacher" must be a valid email'}
+        `(
+            'should return 400 Bad Request',
+            async ({ teacher, notification, errorMessage }) => {
+                const res = await request(server)
+                    .post(url)
+                    .send({ teacher, notification });
+                const error = new BadRequestError(errorMessage);
+
+                expect(Logger.error).toHaveBeenCalledWith(error);
+                expect(res.status).toEqual(StatusCodes.BAD_REQUEST);
+                expect(res.body.message).toEqual(error.message);
+            }
+        );
     });
 
     const addTeacher = async (teacher: string, students: string[]) => {
